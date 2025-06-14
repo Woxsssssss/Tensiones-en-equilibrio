@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Calculadora de Tensiones</title>
+  <style>
+    /* ESTILOS VISUALES DE LA PÁGINA */
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      background: #f2f2f2;
+    }
+    input {
+      margin: 5px;
+      padding: 5px;
+    }
+    canvas {
+      border: 1px solid #444;
+      background: #fff;
+      margin-top: 10px;
+    }
+    /* ESTILOS PARA MOSTRAR EL NOMBRE, CÓDIGO E INSTAGRAM */
+    #credenciales {
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      text-align: right;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- CREDENCIALES DEL AUTOR -->
+  <div id="credenciales">
+    <strong>Jefry Sebastian Lara Garzón</strong><br>
+    Código: 20241578165<br>
+    <a href="https://www.instagram.com/sebastian.lara.zzz?igsh=OGY2NTZla3RicmYz" target="_blank">
+      Instagram
+    </a>
+  </div>
+
+  <!-- FORMULARIO PARA INGRESAR LOS DATOS -->
+  <h1>Calculadora de Tensiones</h1>
+  <label>Masa (kg): <input type="number" id="masa" /></label><br>
+  <label>Ángulo 1 (°): <input type="number" id="angulo1" /></label><br>
+  <label>Ángulo 2 (°): <input type="number" id="angulo2" /></label><br>
+  <button onclick="calcular()">Calcular</button>
+
+  <!-- RESULTADOS DE LOS CÁLCULOS -->
+  <h3>Resultados:</h3>
+  <p id="resultados"></p>
+
+  <!-- CANVAS PARA DIBUJAR EL DIAGRAMA DE CUERPO LIBRE -->
+  <h3>Diagrama de Cuerpo Libre</h3>
+  <canvas id="canvas" width="500" height="500"></canvas>
+
+  <script>
+    // FUNCIÓN PRINCIPAL QUE REALIZA LOS CÁLCULOS
+    function calcular() {
+      // OBTENER LOS DATOS INGRESADOS POR EL USUARIO
+      const masa = parseFloat(document.getElementById('masa').value);
+      const ang1_deg = parseFloat(document.getElementById('angulo1').value);
+      const ang2_deg = parseFloat(document.getElementById('angulo2').value);
+      const g = 10; // GRAVEDAD ASUMIDA DE 10 m/s²
+
+      // CONVERTIR LOS ÁNGULOS A RADIANES
+      const ang1 = ang1_deg * Math.PI / 180;
+      const ang2 = ang2_deg * Math.PI / 180;
+
+      // CALCULAR EL PESO (mg)
+      const peso = masa * g;
+
+      // APLICAR LA FÓRMULA DE EQUILIBRIO PARA OBTENER T2
+      const denom = (Math.cos(ang2) * Math.sin(ang1)) / Math.cos(ang1) + Math.sin(ang2);
+      const T2 = peso / denom;
+
+      // CALCULAR T1 A PARTIR DE T2
+      const T1 = T2 * Math.cos(ang2) / Math.cos(ang1);
+
+      // MOSTRAR LOS RESULTADOS EN PANTALLA
+      document.getElementById('resultados').innerHTML =
+        `Tensión 1 (T1): ${T1.toFixed(2)} N<br>` +
+        `Tensión 2 (T2): ${T2.toFixed(2)} N<br>` +
+        `Peso (mg): ${peso.toFixed(2)} N`;
+
+      // LLAMAR A LA FUNCIÓN PARA DIBUJAR EL DIAGRAMA
+      dibujarDiagrama(T1, T2, peso, ang1_deg, ang2_deg);
+    }
+
+    // FUNCIÓN PARA DIBUJAR EL DIAGRAMA DE CUERPO LIBRE
+    function dibujarDiagrama(T1, T2, peso, ang1_deg, ang2_deg) {
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height); // LIMPIAR EL CANVAS
+
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const escala = 60; // ESCALA PARA HACER VISIBLES LOS VECTORES
+
+      // CONVERTIR NUEVAMENTE LOS ÁNGULOS A RADIANES PARA DIBUJAR
+      const ang1 = ang1_deg * Math.PI / 180;
+      const ang2 = ang2_deg * Math.PI / 180;
+
+      // DIBUJAR LOS EJES X E Y
+      ctx.strokeStyle = "gray";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(centerX - 100, centerY);
+      ctx.lineTo(centerX + 100, centerY);
+      ctx.moveTo(centerX, centerY - 100);
+      ctx.lineTo(centerX, centerY + 100);
+      ctx.stroke();
+
+      // ETIQUETAS DE LOS EJES
+      ctx.fillStyle = "black";
+      ctx.font = "14px sans-serif";
+      ctx.fillText("X", centerX + 105, centerY - 5);
+      ctx.fillText("Y", centerX + 5, centerY - 105);
+      ctx.fillText("N", centerX - 5, 15);
+      ctx.fillText("S", centerX - 5, canvas.height - 10);
+      ctx.fillText("E", canvas.width - 20, centerY + 5);
+      ctx.fillText("O", 10, centerY + 5);
+
+      // DIBUJAR EL CENTRO DEL SISTEMA
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 3, 0, 2 * Math.PI);
+      ctx.fill();
+
+      // DIBUJAR T1 (EN ROJO)
+      const x1 = centerX + escala * Math.cos(ang1);
+      const y1 = centerY - escala * Math.sin(ang1);
+      ctx.strokeStyle = "red";
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(x1, y1);
+      ctx.stroke();
+      ctx.fillStyle = "red";
+      ctx.fillText("T1", x1 + 5, y1 - 5);
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 25, -ang1, 0, false);
+      ctx.stroke();
+      ctx.fillText(`${ang1_deg}°`, centerX + 30, centerY - 5);
+
+      // DIBUJAR T2 (EN AZUL)
+      const x2 = centerX - escala * Math.cos(ang2);
+      const y2 = centerY - escala * Math.sin(ang2);
+      ctx.strokeStyle = "blue";
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+      ctx.fillStyle = "blue";
+      ctx.fillText("T2", x2 - 35, y2 - 5);
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, 30, Math.PI, Math.PI + ang2, false);
+      ctx.stroke();
+      ctx.fillText(`${ang2_deg}°`, centerX - 55, centerY - 5);
+
+      // DIBUJAR EL PESO (mg EN VERDE)
+      const mgY = centerY + escala;
+      ctx.strokeStyle = "green";
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(centerX, mgY);
+      ctx.stroke();
+      ctx.fillStyle = "green";
+      ctx.fillText("mg", centerX + 5, mgY + 15);
+    }
+  </script>
+</body>
+</html>
